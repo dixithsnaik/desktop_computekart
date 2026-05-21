@@ -119,7 +119,7 @@ class _AppProviderCardState extends State<AppProviderCard> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 24,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 3,
+                      childAspectRatio: 2.5,
                     ),
                     itemCount: details.length,
                     itemBuilder: (context, index) {
