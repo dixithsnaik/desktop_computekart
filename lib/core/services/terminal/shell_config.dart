@@ -63,7 +63,11 @@ class ShellResolver {
     if (_cached != null) return _cached!;
 
     if (Platform.isWindows) {
-      _cached = _windowsShells().where((c) => c.exists).toList();
+      // Exclude WSL shell kind from the user-facing dropdown — WSL is entered
+      // programmatically via a `wsl` command sent into a CMD session instead.
+      _cached = _windowsShells()
+          .where((c) => c.exists && c.kind != ShellKind.wsl)
+          .toList();
       if (_cached!.isEmpty) {
         _cached = [
           const ShellConfig(

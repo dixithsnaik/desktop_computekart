@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/services/wsl_execution_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import 'wsl_terminal_modal.dart';
 import '../../core/services/terminal_service.dart';
+import '../../shared/sidebar/app_sidebar.dart';
 import 'dart:io';
 
 class DownloadsPanel extends StatelessWidget {
@@ -193,17 +194,29 @@ class _TaskItem extends StatelessWidget {
                     // Show Logs Button
                     InkWell(
                       onTap: () {
-                        // Open terminal panel and run the task command there
                         final ts = Get.find<TerminalService>();
-                        final shell = Platform.isWindows ? 'wsl' : 'bash';
-                        final inst = ts.createInstance(
+                        // Start CMD as the PTY shell, then enter WSL inside it.
+                        final shell = Platform.isWindows ? 'cmd' : 'bash';
+                        final inst = ts.createSession(
                           shell: shell,
                           title: task.title,
                         );
-                        // ensure panel open
-                        ts.isPanelOpen.value = true;
-                        // send command to terminal
-                        ts.sendToInstance(inst.id, task.command);
+                        if (Platform.isWindows) {
+                          // Step 1: enter WSL from CMD
+                          Future.delayed(const Duration(milliseconds: 600), () {
+                            ts.sendToInstance(inst.id, 'wsl');
+                          });
+                          // Step 2: send the task command inside WSL
+                          Future.delayed(const Duration(milliseconds: 2200), () {
+                            ts.sendToInstance(inst.id, task.command);
+                          });
+                        } else {
+                          Future.delayed(const Duration(milliseconds: 600), () {
+                            ts.sendToInstance(inst.id, task.command);
+                          });
+                        }
+                        // Navigate to the Terminal view and focus the session.
+                        Get.find<SidebarController>().navigateTo(AppRoutes.terminal);
                       },
                       child: Text(
                         'Open In Terminal',

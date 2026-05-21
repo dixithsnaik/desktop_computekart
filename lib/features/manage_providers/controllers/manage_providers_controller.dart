@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../core/services/wsl_execution_service.dart';
 
 class ManageProvidersController extends GetxController {
   final providers = <Map<String, dynamic>>[].obs;
@@ -45,7 +44,7 @@ class ManageProvidersController extends GetxController {
       });
       final token = res['cli_verification_token'] ?? res['token'];
       if (token != null) {
-        return 'curl -sL ${ApiConstants.installMegaUrl} | INSTALL_TOKEN=$token bash';
+        return 'curl -sL ${ApiConstants.installMegaUrl} | sudo INSTALL_TOKEN=$token bash';
       }
       return res['command'];
     } catch (e) {
