@@ -55,7 +55,7 @@ class _TerminalHeaderState extends State<TerminalHeader> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0F1A),
+        color: palette.bgSurfaceMuted,
         border: Border(bottom: BorderSide(color: palette.border)),
       ),
       child: Row(
@@ -87,7 +87,7 @@ class _TerminalHeaderState extends State<TerminalHeader> {
               child: DropdownButton<String>(
                 value: _selectedShell,
                 isDense: true,
-                dropdownColor: const Color(0xFF161B22),
+                dropdownColor: palette.bgSurface,
                 style: TextStyle(
                   color: palette.textMuted,
                   fontSize: 12,
@@ -187,7 +187,7 @@ class _TabChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 2),
       child: Material(
-        color: isActive ? const Color(0xFF1E2530) : Colors.transparent,
+        color: isActive ? palette.bgSurface : Colors.transparent,
         borderRadius: BorderRadius.circular(4),
         child: InkWell(
           onTap: onSelect,

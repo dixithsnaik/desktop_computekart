@@ -38,7 +38,7 @@ class _TerminalPanelState extends State<TerminalPanel> {
     );
 
     return ColoredBox(
-      color: const Color(0xFF030812),
+      color: palette.bgSurface,
       child: Column(
         children: [
           TerminalHeader(
@@ -94,7 +94,7 @@ class _StatusBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0F1A),
+        color: palette.bgSurfaceMuted,
         border: Border(top: BorderSide(color: palette.border)),
       ),
       child: Obx(() {

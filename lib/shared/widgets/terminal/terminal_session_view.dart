@@ -82,7 +82,9 @@ class _TerminalSessionViewState extends State<TerminalSessionView> {
         session.terminal,
         controller: session.controller,
         focusNode: session.focusNode,
-        theme: AppTerminalTheme.dark,
+        theme: Theme.of(context).brightness == Brightness.dark
+            ? AppTerminalTheme.dark
+            : AppTerminalTheme.light,
         textStyle: textStyle,
         autofocus: true,
         autoResize: true,
