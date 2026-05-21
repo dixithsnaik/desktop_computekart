@@ -51,6 +51,9 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
   int? _exitCode;
   Process? _process;
 
+  String? _originalTaskId;
+  String? _originalCommand;
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +77,8 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
 
     final task = service.tasks.first;
     _bindToTask(task);
+    _originalCommand = widget.command;
+    _originalTaskId = task.id;
   }
 
   void _bindToTask(WslTask task) {
@@ -108,6 +113,18 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
     });
   }
 
+  void _restartCommand() {
+    if (_originalCommand == null) return;
+    final service = Get.find<WslExecutionService>();
+    service.executeCommandInBackground(
+      title: widget.title,
+      command: _originalCommand!,
+    );
+    final newTask = service.tasks.first;
+    _bindToTask(newTask);
+    _originalTaskId = newTask.id;
+  }
+
   void _mergeLogs(List<String> incoming) {
     final normalized = _normalizeLogs(incoming);
     _logs.clear();
@@ -116,14 +133,11 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
 
   List<String> _normalizeLogs(List<String> logs) {
     final result = <String>[];
-
     for (final raw in logs) {
       final log = _cleanLog(raw);
-
       if (log.contains('\r')) {
         final parts = log.split('\r');
         final liveLine = parts.last;
-
         if (result.isNotEmpty) {
           result[result.length - 1] = liveLine;
         } else {
@@ -133,7 +147,6 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
         result.add(log);
       }
     }
-
     return result;
   }
 
@@ -243,7 +256,6 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                   padding: const EdgeInsets.all(22),
                   child: Column(
                     children: [
-                      // Styled Custom Tab Container
                       Container(
                         height: 46,
                         decoration: BoxDecoration(
@@ -328,8 +340,8 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                   _isRunning
                       ? 'Installing provider node...'
                       : _exitCode == 0
-                      ? 'Task completed successfully'
-                      : 'Task failed',
+                          ? 'Task completed successfully'
+                          : 'Task failed',
                   style: AppTextStyles.caption(palette.textMuted),
                 ),
               ],
@@ -364,6 +376,11 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
             ),
           const SizedBox(width: 16),
           InkWell(
+            onTap: _restartCommand,
+            child: const Icon(Icons.arrow_back_rounded, color: Colors.white70),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
             onTap: () => Navigator.pop(context),
             child: const Icon(Icons.close_rounded, color: Colors.white70),
           ),
@@ -389,9 +406,7 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
               backgroundColor: const Color(0xFF141D2B),
               valueColor: AlwaysStoppedAnimation(AppColors.lime500),
             ),
-
             const SizedBox(height: 16),
-
             Text(
               'Preparing installation...',
               style: AppTextStyles.body(palette.textSecondary),
@@ -426,9 +441,7 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Text(
                   '${(progress * 100).toInt()}%',
                   style: AppTextStyles.body(
@@ -437,9 +450,7 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                 ),
               ],
             ),
-
             const SizedBox(height: 22),
-
             Expanded(
               child: ListView(
                 children: widget.existingTask!.steps.map((step) {
@@ -463,31 +474,24 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                             color: color,
                           ),
                         ),
-
                         const SizedBox(width: 14),
-
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 step.label,
-                                style: AppTextStyles.body(Colors.white)
-                                    .copyWith(
-                                      fontWeight: step.status.value == 'running'
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                    ),
+                                style: AppTextStyles.body(Colors.white).copyWith(
+                                  fontWeight: step.status.value == 'running'
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
                               ),
-
                               if (step.duration != null) ...[
                                 const SizedBox(height: 4),
-
                                 Text(
                                   '${step.duration!.inSeconds}s',
-                                  style: AppTextStyles.caption(
-                                    palette.textMuted,
-                                  ),
+                                  style: AppTextStyles.caption(palette.textMuted),
                                 ),
                               ],
                             ],
@@ -499,7 +503,6 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                 }).toList(),
               ),
             ),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -508,9 +511,7 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                   size: 14,
                   color: palette.textMuted,
                 ),
-
                 const SizedBox(width: 6),
-
                 Text(
                   'ETA ${widget.existingTask!.estimatedRemaining()}',
                   style: AppTextStyles.caption(palette.textMuted),
@@ -536,9 +537,7 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Color(0xFF1B2433)),
-              ),
+              border: Border(bottom: BorderSide(color: Color(0xFF1B2433))),
             ),
             child: Row(
               children: [
@@ -547,34 +546,27 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                   size: 18,
                   color: AppColors.lime500,
                 ),
-
                 const SizedBox(width: 10),
-
                 Text(
                   'Live Logs',
                   style: AppTextStyles.body(
                     Colors.white,
                   ).copyWith(fontWeight: FontWeight.w600),
                 ),
-
                 const Spacer(),
-
                 Container(
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
                     color: _isRunning
                         ? AppColors.lime500
-                        : (_exitCode == 0
-                              ? AppColors.lime500
-                              : AppColors.red500),
+                        : (_exitCode == 0 ? AppColors.lime500 : AppColors.red500),
                     shape: BoxShape.circle,
                   ),
                 ),
               ],
             ),
           ),
-
           Expanded(
             child: _logs.isEmpty
                 ? Center(
@@ -607,15 +599,11 @@ class _WslTerminalModalState extends State<WslTerminalModal> {
                                 height: 14,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 1.8,
-                                  valueColor: AlwaysStoppedAnimation(
-                                    AppColors.lime500,
-                                  ),
+                                  valueColor: AlwaysStoppedAnimation(AppColors.lime500),
                                 ),
                               ),
-
                               const SizedBox(width: 10),
                             ],
-
                             Expanded(
                               child: SelectableText(
                                 log,

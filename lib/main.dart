@@ -12,6 +12,7 @@ import 'core/services/monitoring_api_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/download_manager_service.dart';
 import 'core/services/wsl_execution_service.dart';
+import 'core/services/terminal_service.dart';
 import 'core/routes/app_routes.dart';
 
 void main() async {
@@ -28,11 +29,23 @@ void main() async {
     try {
       await windowManager.ensureInitialized();
 
-      const windowOptions = WindowOptions(
-        size: Size(AppConstants.defaultWindowWidth, AppConstants.defaultWindowHeight),
-        minimumSize: Size(AppConstants.minWindowWidth, AppConstants.minWindowHeight),
+      // Choose a sensible titlebar background for the current platform brightness
+      final platformBrightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      final bool isDarkMode = platformBrightness == Brightness.dark;
+
+      final windowOptions = WindowOptions(
+        size: Size(
+          AppConstants.defaultWindowWidth,
+          AppConstants.defaultWindowHeight,
+        ),
+        minimumSize: Size(
+          AppConstants.minWindowWidth,
+          AppConstants.minWindowHeight,
+        ),
         center: true,
-        backgroundColor: Colors.transparent,
+        // On dark mode we keep the transparent background; on light mode use white
+        backgroundColor: isDarkMode ? Colors.transparent : Colors.white,
         titleBarStyle: TitleBarStyle.normal,
         title: AppConstants.appName,
       );
@@ -52,6 +65,7 @@ void main() async {
   Get.put(MonitoringApiService(), permanent: true);
   Get.put(DownloadManagerService(), permanent: true);
   Get.put(WslExecutionService(), permanent: true);
+  Get.put(TerminalService(), permanent: true);
 
   runApp(const ComputeKartApp());
 }

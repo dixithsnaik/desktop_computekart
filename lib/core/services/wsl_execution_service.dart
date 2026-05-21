@@ -45,7 +45,6 @@ class WslTask {
   }
 
   void addLog(String data, {bool isError = false}) {
-    // Strip trailing newlines and empty lines for display
     final lines = data.split('\n').where((l) => l.trim().isNotEmpty).toList();
     if (lines.isNotEmpty) {
       lastLogLine.value = lines.last;
@@ -62,7 +61,6 @@ class WslTask {
   }
 
   String estimatedRemaining() {
-    // Simple estimate: average completed step duration * remaining steps
     if (_completedStepDurations.isEmpty) return 'estimating...';
     final avg =
         _completedStepDurations.reduce((a, b) => a + b) /
@@ -126,7 +124,6 @@ class WslExecutionService extends GetxService {
     );
 
     tasks.insert(0, task);
-
     _startProcess(task);
     return task;
   }
@@ -135,20 +132,43 @@ class WslExecutionService extends GetxService {
     try {
       task.addLog('\$ ${task.command}');
       task.startMs = DateTime.now().millisecondsSinceEpoch;
-      // If steps were provided, mark first pending step as running
       if (task.steps.isNotEmpty) {
         task.steps[0].status.value = 'pending';
         task._markStepRunning(0);
       }
 
-      // Execute the command in WSL or standard bash depending on the platform
-      // using -u root to bypass sudo password prompt in WSL
-      final executable = Platform.isWindows ? 'wsl' : 'bash';
-      final args = Platform.isWindows
-          ? ['-u', 'root', '-e', 'bash', '-c', task.command]
-          : ['-c', task.command];
+      Process process;
 
-      final process = await Process.start(executable, args);
+      try {
+        // Attempt primary target execution (WSL on Windows, Bash on Mac/Linux)
+        final executable = Platform.isWindows ? 'wsl.exe' : 'bash';
+        final args = Platform.isWindows
+            ? ['-e', 'bash', '-i', '-l', '-c', task.command]
+            : ['-i', '-l', '-c', task.command];
+
+        process = await Process.start(
+          executable,
+          args,
+          runInShell: true,
+          environment: Platform.environment,
+        );
+      } catch (wslError) {
+        // FIX: Catch the broken Windows WSL RPC Subsystem errors dynamically here.
+        // Instead of breaking the app execution flow, gracefully fall back to cmd.exe.
+        task.addLog(
+          '\r\n[WSL Environment Unavailable: $wslError]\r\n'
+          '[System Status: Redirecting task execution context to cmd.exe fallback...]\r\n',
+          isError: true,
+        );
+
+        process = await Process.start(
+          'cmd.exe',
+          ['/c', task.command],
+          runInShell: true,
+          environment: Platform.environment,
+        );
+      }
+
       task.process = process;
 
       process.stdout.transform(utf8.decoder).listen((data) {
@@ -168,7 +188,6 @@ class WslExecutionService extends GetxService {
         if (exitCode == 0) {
           task.status.value = WslTaskStatus.completed;
           task.addLog('\n[Process completed successfully]');
-          // mark any remaining steps done
           for (var i = 0; i < task.steps.length; i++) {
             task._markStepDone(i);
           }
@@ -176,7 +195,6 @@ class WslExecutionService extends GetxService {
         } else {
           task.status.value = WslTaskStatus.failed;
           task.addLog('\n[Process failed with exit code $exitCode]');
-          // mark running step as failed
           for (var i = 0; i < task.steps.length; i++) {
             if (task.steps[i].status.value == 'running') {
               task.steps[i].status.value = 'failed';
@@ -192,7 +210,6 @@ class WslExecutionService extends GetxService {
 
   void _tryParseAndUpdateSteps(WslTask task, String line) {
     final text = line.toLowerCase();
-    // map keywords -> step index
     final mapping = {
       'cleanup': ['cleanup', 'remove', 'cleaning'],
       'tunnel': ['tunnel', 'tunnel client', 'wireguard', 'wg-quick'],
@@ -221,14 +238,11 @@ class WslExecutionService extends GetxService {
         if (text.contains(k)) {
           final idx = ids.indexOf(id);
           if (idx != -1) {
-            // mark all previous pending steps as done
             for (var i = 0; i < idx; i++) {
               task._markStepDone(i);
             }
-            // mark this step running/done based on keywords
             task._markStepRunning(idx);
             task._markStepDone(idx);
-            // mark next step running
             if (idx + 1 < task.steps.length) task._markStepRunning(idx + 1);
             return;
           }

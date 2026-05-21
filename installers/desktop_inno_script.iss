@@ -4,7 +4,7 @@
 
 #define MyAppName "ComputeKart"
 #define MyAppVersion "0.1.2"
-#define MyAppPublisher "computekart"
+#define MyAppPublisher "computekart.com"
 #define MyAppURL "https://computekart.com/home"
 #define MyAppExeName "compute_kart.exe"
 
@@ -52,12 +52,32 @@ Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\scre
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\window_manager_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+
+; --- VC++ Redistributable Installer ---
+Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; --- Silently run VC++ installer if missing ---
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/quiet /norestart"; Check: VCUpdateRequired; Flags: waituntilterminated
+
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function VCUpdateRequired: Boolean;
+var
+  Version: String;
+begin
+  // Check registry for Visual C++ 2015-2022 Redistributable (x64)
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', Version) then
+  begin
+    Result := False;
+  end
+  else
+  begin
+    Result := True;
+  end;
+end;

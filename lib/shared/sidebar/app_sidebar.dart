@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/wsl_execution_service.dart';
+import '../../core/services/terminal_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -69,31 +70,19 @@ class AppSidebar extends StatelessWidget {
         width: width,
         decoration: BoxDecoration(
           color: palette.bgNavbar,
-          border: Border(
-            right: BorderSide(
-              color: palette.border,
-              width: 1,
-            ),
-          ),
+          border: Border(right: BorderSide(color: palette.border, width: 1)),
         ),
         child: Column(
           children: [
             /// HEADER
-            _Header(
-              ctrl: ctrl,
-              collapsed: collapsed,
-              palette: palette,
-            ),
+            _Header(ctrl: ctrl, collapsed: collapsed, palette: palette),
 
             const SizedBox(height: 8),
 
             /// NAVIGATION
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -163,6 +152,19 @@ class AppSidebar extends StatelessWidget {
                       ctrl: ctrl,
                     ),
 
+                    _SidebarItem(
+                      icon: Icons.code_rounded,
+                      label: 'Terminal',
+                      route: '',
+                      collapsed: collapsed,
+                      palette: palette,
+                      ctrl: ctrl,
+                      onTap: () {
+                        final ts = Get.find<TerminalService>();
+                        ts.togglePanel();
+                      },
+                    ),
+
                     // _SectionLabel(
                     //   label: 'STORAGE',
                     //   collapsed: collapsed,
@@ -183,10 +185,7 @@ class AppSidebar extends StatelessWidget {
             ),
 
             /// BOTTOM SECTION
-            Divider(
-              height: 1,
-              color: palette.border,
-            ),
+            Divider(height: 1, color: palette.border),
 
             _SidebarItem(
               icon: Icons.task_alt_outlined,
@@ -201,7 +200,9 @@ class AppSidebar extends StatelessWidget {
               },
               trailing: Obx(() {
                 final dm = Get.find<WslExecutionService>();
-                final activeCount = dm.tasks.where((t) => t.status.value == WslTaskStatus.running).length;
+                final activeCount = dm.tasks
+                    .where((t) => t.status.value == WslTaskStatus.running)
+                    .length;
                 if (activeCount == 0 || collapsed) return const SizedBox();
                 return Container(
                   width: 8,
@@ -224,9 +225,7 @@ class AppSidebar extends StatelessWidget {
               palette: palette,
               ctrl: ctrl,
               onTap: () {
-                Get.changeThemeMode(
-                  isDark ? ThemeMode.light : ThemeMode.dark,
-                );
+                Get.changeThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
               },
             ),
 
@@ -239,11 +238,7 @@ class AppSidebar extends StatelessWidget {
               ctrl: ctrl,
             ),
 
-            _LogoutButton(
-              collapsed: collapsed,
-              palette: palette,
-              auth: auth,
-            ),
+            _LogoutButton(collapsed: collapsed, palette: palette, auth: auth),
 
             const SizedBox(height: 8),
           ],
@@ -273,12 +268,7 @@ class _Header extends StatelessWidget {
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: palette.border,
-            width: 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: palette.border, width: 1)),
       ),
       child: Row(
         children: [
@@ -287,9 +277,7 @@ class _Header extends StatelessWidget {
               child: Text(
                 'ComputeKart',
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.h4(
-                  palette.brand0a,
-                ),
+                style: AppTextStyles.h4(palette.brand0a),
               ),
             ),
           ],
@@ -300,9 +288,7 @@ class _Header extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(4),
               child: Icon(
-                collapsed
-                    ? Icons.chevron_right
-                    : Icons.chevron_left,
+                collapsed ? Icons.chevron_right : Icons.chevron_left,
                 size: 20,
                 color: palette.textMuted,
               ),
@@ -363,7 +349,8 @@ class _SidebarItemState extends State<_SidebarItem> {
           });
         },
         child: GestureDetector(
-          onTap: widget.onTap ??
+          onTap:
+              widget.onTap ??
               () {
                 widget.ctrl.navigateTo(widget.route);
               },
@@ -378,16 +365,12 @@ class _SidebarItemState extends State<_SidebarItem> {
               color: isActive
                   ? AppColors.lime400.withValues(alpha: 0.15)
                   : hovered
-                      ? widget.palette.bgSurfaceMuted
-                          .withValues(alpha: 0.4)
-                      : Colors.transparent,
+                  ? widget.palette.bgSurfaceMuted.withValues(alpha: 0.4)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: isActive
                   ? const Border(
-                      left: BorderSide(
-                        color: AppColors.lime500,
-                        width: 3,
-                      ),
+                      left: BorderSide(color: AppColors.lime500, width: 3),
                     )
                   : null,
             ),
@@ -402,8 +385,8 @@ class _SidebarItemState extends State<_SidebarItem> {
                         color: isActive
                             ? AppColors.lime500
                             : hovered
-                                ? widget.palette.textPrimary
-                                : widget.palette.textMuted,
+                            ? widget.palette.textPrimary
+                            : widget.palette.textMuted,
                       ),
                     ),
                   )
@@ -415,8 +398,8 @@ class _SidebarItemState extends State<_SidebarItem> {
                         color: isActive
                             ? AppColors.lime500
                             : hovered
-                                ? widget.palette.textPrimary
-                                : widget.palette.textMuted,
+                            ? widget.palette.textPrimary
+                            : widget.palette.textMuted,
                       ),
 
                       const SizedBox(width: 10),
@@ -429,8 +412,8 @@ class _SidebarItemState extends State<_SidebarItem> {
                             isActive
                                 ? AppColors.lime500
                                 : hovered
-                                    ? widget.palette.textPrimary
-                                    : widget.palette.textSecondary,
+                                ? widget.palette.textPrimary
+                                : widget.palette.textSecondary,
                           ),
                         ),
                       ),
@@ -463,24 +446,15 @@ class _SectionLabel extends StatelessWidget {
     if (collapsed) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Divider(
-          height: 1,
-          color: palette.border,
-        ),
+        child: Divider(height: 1, color: palette.border),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 12,
-        top: 16,
-        bottom: 6,
-      ),
+      padding: const EdgeInsets.only(left: 12, top: 16, bottom: 6),
       child: Text(
         label,
-        style: AppTextStyles.sidebarSection(
-          palette.textMuted,
-        ),
+        style: AppTextStyles.sidebarSection(palette.textMuted),
       ),
     );
   }
@@ -510,10 +484,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: MouseRegion(
         onEnter: (_) {
           setState(() {
@@ -553,11 +524,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
                   )
                 : Row(
                     children: [
-                      Icon(
-                        Icons.logout,
-                        size: 18,
-                        color: AppColors.red500,
-                      ),
+                      Icon(Icons.logout, size: 18, color: AppColors.red500),
 
                       const SizedBox(width: 10),
 
@@ -565,9 +532,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
                         child: Text(
                           'Logout',
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.sidebarItem(
-                            AppColors.red500,
-                          ),
+                          style: AppTextStyles.sidebarItem(AppColors.red500),
                         ),
                       ),
                     ],

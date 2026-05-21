@@ -38,6 +38,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_dotenv: ^6.0.1
   path_provider: ^2.1.5
+  msix: ^3.16.13
+  flutter_pty: ^0.3.1
+  xterm: ^4.0.0
 
 dev_dependencies:
   flutter_test:
@@ -63,3 +66,16 @@ flutter_launcher_icons:
   linux:
     generate: true
     image_path: "assets/icon/app_icon.png"
+
+msix_config:
+  display_name: ComputeKart
+  publisher_display_name: ComputeKart
+  identity_name: com.computekart.desktop
+  msix_version: 1.0.0.0
+  logo_path: assets/icon/app_icon.png
+
+  capabilities: internetClient
+
+  languages: en-us
+
+  install_certificate: false

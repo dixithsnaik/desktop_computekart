@@ -4,6 +4,8 @@ import '../../core/services/wsl_execution_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'wsl_terminal_modal.dart';
+import '../../core/services/terminal_service.dart';
+import 'dart:io';
 
 class DownloadsPanel extends StatelessWidget {
   const DownloadsPanel({super.key});
@@ -191,11 +193,20 @@ class _TaskItem extends StatelessWidget {
                     // Show Logs Button
                     InkWell(
                       onTap: () {
-                        // Open full terminal modal
-                        WslTerminalModal.showForTask(context, task);
+                        // Open terminal panel and run the task command there
+                        final ts = Get.find<TerminalService>();
+                        final shell = Platform.isWindows ? 'wsl' : 'bash';
+                        final inst = ts.createInstance(
+                          shell: shell,
+                          title: task.title,
+                        );
+                        // ensure panel open
+                        ts.isPanelOpen.value = true;
+                        // send command to terminal
+                        ts.sendToInstance(inst.id, task.command);
                       },
                       child: Text(
-                        'View Details',
+                        'Open In Terminal',
                         style: AppTextStyles.bodySmall(AppColors.blue500),
                       ),
                     ),
