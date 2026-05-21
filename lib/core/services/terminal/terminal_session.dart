@@ -59,11 +59,12 @@ class TerminalSession {
 
   int? get pid => _pty?.pid;
 
+  // Hardened fallbacks for cold-boot measurements
   int get _ptyCols =>
-      terminal.viewWidth >= 2 ? terminal.viewWidth : _defaultCols;
+      terminal.viewWidth > 2 ? terminal.viewWidth : _defaultCols;
 
   int get _ptyRows =>
-      terminal.viewHeight >= 2 ? terminal.viewHeight : _defaultRows;
+      terminal.viewHeight > 2 ? terminal.viewHeight : _defaultRows;
 
   /// Start the PTY process (safe to call multiple times).
   Future<void> ensureStarted() async {
@@ -82,6 +83,8 @@ class TerminalSession {
 
     try {
       await _startPty();
+    } catch (e) {
+      status.value = 'error';
     } finally {
       _launchInProgress = false;
     }
@@ -125,8 +128,6 @@ class TerminalSession {
     final cols = _ptyCols.clamp(2, 999);
     final rows = _ptyRows.clamp(2, 999);
 
-    // FIX: Pass Platform.environment down completely! This provides the necessary
-    // OS security contexts and variables to avoid the Windows 8009001d cryptography initialization error.
     _pty = Pty.start(
       config.executable,
       arguments: config.arguments,
@@ -184,8 +185,10 @@ class TerminalSession {
   }
 
   void focusTerminal() {
-    focusNode.requestFocus();
-    viewKey.currentState?.requestKeyboard();
+    // Check if context view is safely bound before requesting platform level input focus
+    if (focusNode.canRequestFocus) {
+      focusNode.requestFocus();
+    }
   }
 
   void _handleTerminalResize(
@@ -201,10 +204,11 @@ class TerminalSession {
       return;
     }
 
-    // FIX: Defers PTY startup out of the immediate Flutter rendering layout loop frame context
-    // using a PostFrameCallback microtask. This stops the Obx layout crash dead in its tracks.
+    // Delays initialization out of the dirty layout frame phase safely.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ensureStarted());
+      if (_pty == null && !_launchInProgress) {
+        unawaited(ensureStarted());
+      }
     });
   }
 

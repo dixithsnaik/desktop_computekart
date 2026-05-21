@@ -86,12 +86,13 @@ class _TerminalSessionViewState extends State<TerminalSessionView> {
             ? AppTerminalTheme.dark
             : AppTerminalTheme.light,
         textStyle: textStyle,
-        autofocus: true,
+        autofocus: false,
         autoResize: true,
         hardwareKeyboardOnly: false,
         deleteDetection: true,
         onKeyEvent: _onKeyEvent,
         onSecondaryTapDown: _onSecondaryTapDown,
+        padding: const EdgeInsets.all(16.0),
       ),
     );
   }
