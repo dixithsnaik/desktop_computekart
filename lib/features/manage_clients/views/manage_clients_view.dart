@@ -7,8 +7,9 @@ import '../../../shared/layouts/desktop_layout.dart';
 import '../../../shared/widgets/action_confirm_modal.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/app_toast.dart';
-import '../../../shared/widgets/wsl_terminal_modal.dart';
 import '../../../core/services/wsl_execution_service.dart';
+import '../../../shared/sidebar/app_sidebar.dart';
+import '../../../core/routes/app_routes.dart';
 import '../controllers/manage_clients_controller.dart';
 
 class ManageClientsView extends GetView<ManageClientsController> {
@@ -66,6 +67,7 @@ class ManageClientsView extends GetView<ManageClientsController> {
                                   ),
                                 ],
                               );
+                          Get.find<SidebarController>().navigateTo(AppRoutes.terminal);
                         },
                       );
                     }

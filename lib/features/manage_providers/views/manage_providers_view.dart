@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/routes/app_routes.dart';
@@ -10,7 +8,7 @@ import '../../../shared/sidebar/app_sidebar.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/app_provider_card.dart';
 import '../../../shared/widgets/action_confirm_modal.dart';
-import '../../../core/services/terminal_service.dart';
+import '../../../core/services/wsl_execution_service.dart';
 import '../controllers/manage_providers_controller.dart';
 
 class ManageProvidersView extends GetView<ManageProvidersController> {
@@ -44,29 +42,41 @@ class ManageProvidersView extends GetView<ManageProvidersController> {
                         showConfirm: false,
                         cancelLabel: 'Close',
                         onRunHere: () {
-                          final ts = Get.find<TerminalService>();
-                          // Always start CMD as the PTY shell, then enter WSL
-                          // as a command inside it (works even on non-WSL systems
-                          // that have cmd.exe). On Linux/Mac, run bash directly.
-                          final shell = Platform.isWindows ? 'cmd' : 'bash';
-                          final session = ts.createSession(
-                            shell: shell,
-                            title: 'Install Provider Node',
-                          );
-                          if (Platform.isWindows) {
-                            // Step 1: enter WSL environment from CMD
-                            Future.delayed(const Duration(milliseconds: 600), () {
-                              ts.sendToInstance(session.id, 'wsl');
-                            });
-                            // Step 2: run the install command inside WSL
-                            Future.delayed(const Duration(milliseconds: 2200), () {
-                              ts.sendToInstance(session.id, cmd);
-                            });
-                          } else {
-                            Future.delayed(const Duration(milliseconds: 600), () {
-                              ts.sendToInstance(session.id, cmd);
-                            });
-                          }
+                          Get.find<WslExecutionService>()
+                              .executeCommandInBackground(
+                                title: 'Installing Provider Node',
+                                command: cmd,
+                                initialSteps: [
+                                  WslStep(
+                                    id: 'cleanup',
+                                    label: 'Cleanup previous installs',
+                                  ),
+                                  WslStep(
+                                    id: 'tunnel',
+                                    label: 'Downloading tunnel client',
+                                  ),
+                                  WslStep(
+                                    id: 'image',
+                                    label: 'Downloading VM image',
+                                  ),
+                                  WslStep(
+                                    id: 'package',
+                                    label: 'Downloading package',
+                                  ),
+                                  WslStep(
+                                    id: 'deps',
+                                    label: 'Installing dependencies',
+                                  ),
+                                  WslStep(
+                                    id: 'java',
+                                    label: 'Installing custom Java',
+                                  ),
+                                  WslStep(
+                                    id: 'final',
+                                    label: 'Finalizing installation',
+                                  ),
+                                ],
+                              );
                           // Navigate to terminal so the user sees live output.
                           Get.find<SidebarController>().navigateTo(AppRoutes.terminal);
                         },

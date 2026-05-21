@@ -15,6 +15,8 @@ class TerminalSession {
     required this.id,
     required String initialTitle,
     required this.shell,
+    this.onOutput,
+    this.onExit,
     int maxScrollbackLines = 10000,
   }) : title = initialTitle.obs,
        focusNode = FocusNode(debugLabel: 'terminal-$id') {
@@ -38,6 +40,8 @@ class TerminalSession {
   final String id;
   final RxString title;
   final String shell;
+  final void Function(String)? onOutput;
+  final void Function(int)? onExit;
 
   final FocusNode focusNode;
   final GlobalKey<TerminalViewState> viewKey = GlobalKey<TerminalViewState>();
@@ -149,6 +153,7 @@ class TerminalSession {
         if (code != 0) {
           terminal.write('\r\n[Process exited with code $formatted]\r\n');
         }
+        onExit?.call(code);
       }),
     );
 
@@ -167,7 +172,9 @@ class TerminalSession {
 
   void _onPtyOutput(Uint8List data) {
     if (data.isEmpty) return;
-    terminal.write(utf8.decode(data, allowMalformed: true));
+    final text = utf8.decode(data, allowMalformed: true);
+    terminal.write(text);
+    onOutput?.call(text);
   }
 
   void _onTerminalOutput(String data) {

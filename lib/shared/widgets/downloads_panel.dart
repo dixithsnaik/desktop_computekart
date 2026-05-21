@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/services/terminal_service.dart';
 import '../../shared/sidebar/app_sidebar.dart';
-import 'dart:io';
 
 class DownloadsPanel extends StatelessWidget {
   const DownloadsPanel({super.key});
@@ -194,28 +193,9 @@ class _TaskItem extends StatelessWidget {
                     // Show Logs Button
                     InkWell(
                       onTap: () {
+                        // Focus the existing TerminalSession and navigate
                         final ts = Get.find<TerminalService>();
-                        // Start CMD as the PTY shell, then enter WSL inside it.
-                        final shell = Platform.isWindows ? 'cmd' : 'bash';
-                        final inst = ts.createSession(
-                          shell: shell,
-                          title: task.title,
-                        );
-                        if (Platform.isWindows) {
-                          // Step 1: enter WSL from CMD
-                          Future.delayed(const Duration(milliseconds: 600), () {
-                            ts.sendToInstance(inst.id, 'wsl');
-                          });
-                          // Step 2: send the task command inside WSL
-                          Future.delayed(const Duration(milliseconds: 2200), () {
-                            ts.sendToInstance(inst.id, task.command);
-                          });
-                        } else {
-                          Future.delayed(const Duration(milliseconds: 600), () {
-                            ts.sendToInstance(inst.id, task.command);
-                          });
-                        }
-                        // Navigate to the Terminal view and focus the session.
+                        ts.setActiveSession(task.id);
                         Get.find<SidebarController>().navigateTo(AppRoutes.terminal);
                       },
                       child: Text(

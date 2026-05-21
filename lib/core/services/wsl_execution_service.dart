@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:get/get.dart';
+import 'terminal_service.dart';
 
 enum WslTaskStatus { running, completed, failed, cancelled }
 
@@ -30,7 +30,6 @@ class WslTask {
   final RxDouble progress = 0.0.obs; // 0.0 .. 1.0
   final List<int> _completedStepDurations = [];
   int? exitCode;
-  Process? process;
   int? startMs;
 
   WslTask({
@@ -54,7 +53,8 @@ class WslTask {
 
   void cancel() {
     if (status.value == WslTaskStatus.running) {
-      process?.kill();
+      final ts = Get.find<TerminalService>();
+      ts.find(id)?.kill();
       status.value = WslTaskStatus.cancelled;
       addLog('\n[Task cancelled by user]');
     }
@@ -116,96 +116,72 @@ class WslExecutionService extends GetxService {
     required String command,
     List<WslStep>? initialSteps,
   }) {
-    final task = WslTask(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final ts = Get.find<TerminalService>();
+    final shell = Platform.isWindows ? 'cmd' : 'bash';
+
+    late WslTask task;
+
+    final session = ts.createSession(
+      shell: shell,
+      title: title,
+      onOutput: (text) {
+        task.addLog(text);
+        _tryParseAndUpdateSteps(task, text);
+      },
+      onExit: (code) {
+        task.exitCode = code;
+        if (task.status.value == WslTaskStatus.running) {
+          if (code == 0) {
+            task.status.value = WslTaskStatus.completed;
+            task.addLog('\n[Process completed successfully]');
+            for (var i = 0; i < task.steps.length; i++) {
+              task._markStepDone(i);
+            }
+            task.progress.value = 1.0;
+          } else {
+            task.status.value = WslTaskStatus.failed;
+            task.addLog('\n[Process failed with exit code $code]');
+            for (var i = 0; i < task.steps.length; i++) {
+              if (task.steps[i].status.value == 'running') {
+                task.steps[i].status.value = 'failed';
+              }
+            }
+          }
+        }
+      },
+    );
+
+    task = WslTask(
+      id: session.id, // The task ID matches the TerminalSession ID
       title: title,
       command: command,
       initialSteps: initialSteps,
     );
 
     tasks.insert(0, task);
-    _startProcess(task);
-    return task;
-  }
-
-  Future<void> _startProcess(WslTask task) async {
-    try {
-      task.addLog('\$ ${task.command}');
-      task.startMs = DateTime.now().millisecondsSinceEpoch;
-      if (task.steps.isNotEmpty) {
-        task.steps[0].status.value = 'pending';
-        task._markStepRunning(0);
-      }
-
-      Process process;
-
-      try {
-        // Attempt primary target execution (WSL on Windows, Bash on Mac/Linux)
-        final executable = Platform.isWindows ? 'wsl.exe' : 'bash';
-        final args = Platform.isWindows
-            ? ['-e', 'bash', '-i', '-l', '-c', task.command]
-            : ['-i', '-l', '-c', task.command];
-
-        process = await Process.start(
-          executable,
-          args,
-          runInShell: true,
-          environment: Platform.environment,
-        );
-      } catch (wslError) {
-        // FIX: Catch the broken Windows WSL RPC Subsystem errors dynamically here.
-        // Instead of breaking the app execution flow, gracefully fall back to cmd.exe.
-        task.addLog(
-          '\r\n[WSL Environment Unavailable: $wslError]\r\n'
-          '[System Status: Redirecting task execution context to cmd.exe fallback...]\r\n',
-          isError: true,
-        );
-
-        process = await Process.start(
-          'cmd.exe',
-          ['/c', task.command],
-          runInShell: true,
-          environment: Platform.environment,
-        );
-      }
-
-      task.process = process;
-
-      process.stdout.transform(utf8.decoder).listen((data) {
-        task.addLog(data);
-        _tryParseAndUpdateSteps(task, data);
-      });
-
-      process.stderr.transform(utf8.decoder).listen((data) {
-        task.addLog(data, isError: true);
-        _tryParseAndUpdateSteps(task, data);
-      });
-
-      final exitCode = await process.exitCode;
-      task.exitCode = exitCode;
-
-      if (task.status.value == WslTaskStatus.running) {
-        if (exitCode == 0) {
-          task.status.value = WslTaskStatus.completed;
-          task.addLog('\n[Process completed successfully]');
-          for (var i = 0; i < task.steps.length; i++) {
-            task._markStepDone(i);
-          }
-          task.progress.value = 1.0;
-        } else {
-          task.status.value = WslTaskStatus.failed;
-          task.addLog('\n[Process failed with exit code $exitCode]');
-          for (var i = 0; i < task.steps.length; i++) {
-            if (task.steps[i].status.value == 'running') {
-              task.steps[i].status.value = 'failed';
-            }
-          }
-        }
-      }
-    } catch (e) {
-      task.addLog('Failed to start execution: $e', isError: true);
-      task.status.value = WslTaskStatus.failed;
+    
+    task.addLog('\$ $command');
+    task.startMs = DateTime.now().millisecondsSinceEpoch;
+    if (task.steps.isNotEmpty) {
+      task.steps[0].status.value = 'pending';
+      task._markStepRunning(0);
     }
+
+    // Sequence the command execution via TerminalService
+    if (Platform.isWindows) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ts.sendToInstance(session.id, 'wsl');
+      });
+      Future.delayed(const Duration(milliseconds: 2200), () {
+        ts.sendToInstance(session.id, command);
+      });
+    } else {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ts.sendToInstance(session.id, command);
+      });
+    }
+
+    return task;
   }
 
   void _tryParseAndUpdateSteps(WslTask task, String line) {

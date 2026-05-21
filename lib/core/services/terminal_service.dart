@@ -37,6 +37,8 @@ class TerminalService extends GetxService {
   TerminalSession createSession({
     String? title,
     String? shell,
+    void Function(String)? onOutput,
+    void Function(int)? onExit,
   }) {
     final shellId = shell ?? defaultShell;
     final config = ShellResolver.resolve(shellId);
@@ -45,6 +47,8 @@ class TerminalService extends GetxService {
       id: id,
       initialTitle: title ?? config.displayName,
       shell: shellId,
+      onOutput: onOutput,
+      onExit: onExit,
     );
     sessions.insert(0, session);
     activeSessionId.value = id;
