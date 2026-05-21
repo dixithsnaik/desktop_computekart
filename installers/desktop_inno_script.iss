@@ -3,15 +3,14 @@
 ; Non-commercial use only
 
 #define MyAppName "ComputeKart"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.1.3"
 #define MyAppPublisher "computekart.com"
 #define MyAppURL "https://computekart.com/home"
 #define MyAppExeName "compute_kart.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
-; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{16CEA89B-A740-4EA8-9B95-52081A792F59}
+AppId={{16CEA89B-A740-4EA8-9B95-52081A792F59}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -38,6 +37,11 @@ SetupIconFile=D:\project-extra\new\clientFrontend\public\favicon.ico
 SolidCompression=yes
 WizardStyle=modern dynamic windows11
 
+; NOTE: SignTool is commented out below so the script compiles without errors.
+; To permanently fix "Unknown Publisher" later, remove the semicolon below 
+; AFTER configuring 'custom_signtool' in Tools -> Configure Sign Tools.
+; SignTool=custom_signtool $f
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
@@ -51,6 +55,10 @@ Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\flut
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\screen_retriever_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\window_manager_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; --- CRITICAL FIX: Bundles the missing PTY binary into your production build installation output ---
+Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\flutter_pty.dll"; DestDir: "{app}"; Flags: ignoreversion
+
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; --- VC++ Redistributable Installer ---
@@ -71,8 +79,9 @@ function VCUpdateRequired: Boolean;
 var
   Version: String;
 begin
-  // Check registry for Visual C++ 2015-2022 Redistributable (x64)
-  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', Version) then
+  // Check the 64-bit Registry view explicitly for Visual C++ 2015-2022 Redistributable (x64)
+  // Using RegQueryStringValue with HKLM64 handles the native x64 registry layer safely.
+  if RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Version', Version) then
   begin
     Result := False;
   end
