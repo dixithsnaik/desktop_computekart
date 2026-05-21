@@ -61,6 +61,9 @@ Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\data
 ; --- VC++ Redistributable Installer ---
 Source: "D:\project-extra\new\compute_kart\build\windows\x64\runner\Release\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
+; --- Bundle entire Indra-cli folder for WSL Installation ---
+Source: "D:\project-extra\new\Indra-cli\*"; DestDir: "{app}\Indra-cli"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
@@ -72,6 +75,9 @@ Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/quiet /norestart"; Check: VCU
 ; --- Run WSL installation if missing ---
 ; Using 'runhidden' so the command window doesn't look messy to users.
 Filename: "wsl.exe"; Parameters: "--install --no-distribution"; Check: WSLInstallationRequired; Flags: runhidden waituntilterminated
+
+; --- Run ckart CLI Installation inside WSL ---
+Filename: "wsl.exe"; Parameters: "bash -c ""cd '$(wslpath '{app}\Indra-cli')' && sed -i 's/\r$//' Install-ckart.sh && chmod +x Install-ckart.sh && ./Install-ckart.sh"""; Flags: waituntilterminated
 
 ; --- App execution launcher ---
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

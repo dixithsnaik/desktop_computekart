@@ -92,8 +92,12 @@ class _VMConfigForm extends StatelessWidget {
   }
 
   Widget _field(String label, String key, ProvidersController c, AppPalette p) {
-    return Obx(() => TextField(onChanged: (v) => c.updateField(key, v), controller: TextEditingController(text: c.formData[key]?.toString() ?? ''),
-      style: AppTextStyles.body(p.textPrimary), decoration: InputDecoration(hintText: label)));
+    return TextFormField(
+      initialValue: c.formData[key]?.toString() ?? '',
+      onChanged: (v) => c.updateField(key, v),
+      style: AppTextStyles.body(p.textPrimary),
+      decoration: InputDecoration(hintText: label),
+    );
   }
 
   Widget _dropdown(String label, String key, List<DropdownMenuItem<String>> items, ProvidersController c, AppPalette p) {
