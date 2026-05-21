@@ -211,6 +211,21 @@ class AppSidebar extends StatelessWidget {
             ),
 
             _SidebarItem(
+              icon: Icons.refresh_outlined,
+              label: 'Refresh Page',
+              route: '',
+              collapsed: collapsed,
+              palette: palette,
+              ctrl: ctrl,
+              onTap: () {
+                final route = Get.currentRoute;
+                if (route.isNotEmpty) {
+                  Get.offAllNamed(route);
+                }
+              },
+            ),
+
+            _SidebarItem(
               icon: isDark
                   ? Icons.light_mode_outlined
                   : Icons.dark_mode_outlined,
