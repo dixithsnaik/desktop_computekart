@@ -19,6 +19,7 @@ import '../../features/tunnels/bindings/tunnels_binding.dart';
 import '../../features/tunnels/views/tunnels_view.dart';
 import '../../features/buckets/bindings/buckets_binding.dart';
 import '../../features/buckets/views/buckets_view.dart';
+import '../../features/terminal/views/terminal_view.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -34,6 +35,7 @@ class AppRoutes {
   static const String manageClients = '/manage/clients';
   static const String tunnels = '/tunnels';
   static const String buckets = '/buckets';
+  static const String terminal = '/terminal';
 
   static final List<GetPage> pages = [
     GetPage(
@@ -102,6 +104,11 @@ class AppRoutes {
       name: buckets,
       page: () => const BucketsView(),
       binding: BucketsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: terminal,
+      page: () => const TerminalView(),
       transition: Transition.fadeIn,
     ),
   ];

@@ -5,7 +5,6 @@ import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/wsl_execution_service.dart';
-import '../../core/services/terminal_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -155,14 +154,10 @@ class AppSidebar extends StatelessWidget {
                     _SidebarItem(
                       icon: Icons.code_rounded,
                       label: 'Terminal',
-                      route: '',
+                      route: AppRoutes.terminal,
                       collapsed: collapsed,
                       palette: palette,
                       ctrl: ctrl,
-                      onTap: () {
-                        final ts = Get.find<TerminalService>();
-                        ts.togglePanel();
-                      },
                     ),
 
                     // _SectionLabel(

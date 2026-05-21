@@ -5,8 +5,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/wsl_execution_service.dart';
 import 'package:get/get.dart';
 import '../widgets/downloads_panel.dart';
-import '../widgets/terminal_panel.dart';
-import '../../core/services/terminal_service.dart';
 
 /// The main desktop shell — sidebar + content area.
 /// Replaces React's PageWrapper (Navbar + content + Footer).
@@ -23,22 +21,14 @@ class DesktopLayout extends StatelessWidget {
       backgroundColor: palette.bgWrapper,
       body: Stack(
         children: [
-          Obx(() {
-            final ts = Get.find<TerminalService>();
-            return Row(
-              children: [
-                const AppSidebar(),
-                Expanded(
-                  child: ts.isPanelOpen.value ? const TerminalPanel() : child,
-                ),
-              ],
-            );
-          }),
+          Row(
+            children: [
+              const AppSidebar(),
+              Expanded(child: child),
+            ],
+          ),
           Obx(() {
             final dm = Get.find<WslExecutionService>();
-            final ts = Get.find<TerminalService>();
-
-            const terminalHeight = 260.0;
 
             if (dm.isPanelOpen.value) {
               return const Positioned(
